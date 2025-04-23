@@ -10,8 +10,8 @@ typedef struct {
 } keydata_t;
 
 enum player_modes {
-    MODE_KEYS,
     MODE_MIDI,
+    MODE_KEYS,
     MODE_ARP_UP,
     MODE_ARP_DOWN,
     MODE_ARP_UP_DOWN,
@@ -34,7 +34,7 @@ typedef struct {
     arp_t arp;
 
     int midiNotesPlayed;
-    long retriggerMomentMillis;  // instant if 0, millis to wait otherwise
+    unsigned long retriggerMomentMillis;  // instant if 0, millis to wait otherwise
     int lastPB, lastMod;
 } player_t;
 

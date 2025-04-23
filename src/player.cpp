@@ -56,9 +56,6 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
         int loopLength = isNineth ? 2 : 12;
 
         for (int i = 0; i < loopLength; i++) {
-            char sr1 = 1 << i;
-            char sr2 = i >= 8 ? (1 << (i - 8)) : 0;
-
             SPI.transfer16(1 << i);
 
             digitalWrite(SR_LATCH, HIGH);
@@ -88,6 +85,8 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
                 if (isPad1) {
                     keyData->initialPressMillis = millis();
                 } else {
+                    // Serial.print("key pressed");
+
                     keyData->isPressed = true;
 
                     clearHeld = true;  // a new key pressed, arp hold must be cleared if not already
@@ -259,7 +258,7 @@ void performArpStepRising(player_t* p) {
 void player_update(player_t* p) {
     p->mode = readModeSwitch();
 
-    bool retrigger = !digitalRead(RETRIGGER);
+    bool retrigger = digitalRead(RETRIGGER);
     bool hold = !digitalRead(HOLD);
 
     detectKeys(p, retrigger, hold);
@@ -299,11 +298,8 @@ void player_update(player_t* p) {
         }
 
         if (highestKey >= 0 && p->retriggerMomentMillis < millis()) {
-            digitalWrite(GATE, HIGH);
-
             int note = NOTE_OF_LOWEST_KEY + highestKey;
             int vel = p->keys[highestKey].initialPressMillis;
-
             synth_note_on(note, vel);
         } else {
             synth_note_off();
@@ -332,7 +328,7 @@ void player_update(player_t* p) {
         }
         arp->externalClockInLast = externalClockRead;
 
-        int halfPeriod = calcArpPeriod();
+        unsigned long halfPeriod = calcArpPeriod();
         if (arp->lastHalfStep + halfPeriod < millis() || arp->clockInCounter >= 24) {
             if (arp->lastArpStepRising) {
                 synth_note_off();

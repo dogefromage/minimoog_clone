@@ -11,6 +11,12 @@ player_t* get_instance() {
 }
 
 void setup() {
+    // Serial.begin(9600);
+    // while (!Serial) {
+    //     // wait for connection
+    // }
+    // Serial.println("Connected!");
+
     pinMode(MOSI, OUTPUT);
     pinMode(SCK, OUTPUT);
     pinMode(SR_LATCH, OUTPUT);
@@ -39,5 +45,6 @@ void setup() {
 }
 
 void loop() {
+    // Serial.println("loop");
     player_update(&playerInstance);
 }
