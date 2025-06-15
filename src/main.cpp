@@ -11,11 +11,11 @@ player_t* get_instance() {
 }
 
 void setup() {
-    // Serial.begin(9600);
-    // while (!Serial) {
-    //     // wait for connection
-    // }
-    // Serial.println("Connected!");
+    Serial.begin(9600 /* , SERIAL_8N1 */);
+    while (!Serial) {
+        // wait for connection
+    }
+    Serial.println("Connected!");
 
     pinMode(MOSI, OUTPUT);
     pinMode(SCK, OUTPUT);

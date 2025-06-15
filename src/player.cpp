@@ -8,7 +8,7 @@
 #include "config.h"
 #include "instrument.h"
 
-MIDI_CREATE_DEFAULT_INSTANCE();
+USE_MIDI(MIDI_CREATE_DEFAULT_INSTANCE());
 
 #undef abs
 // the arduino abs is a macro???? not good design choice
@@ -45,7 +45,7 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
     // whether or not to clear the arp bool if key is not pressed
     bool clearHeld = !hold;
 
-    SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(500000, MSBFIRST, SPI_MODE0));
 
     for (int j = 0; j < 9; j++) {
         digitalWrite(A, (j >> 0) & 1);
@@ -104,7 +104,7 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
                     p->keys[i].velocity = vel;
 
                     if (p->mode == MODE_KEYS || p->mode == MODE_MIDI) {
-                        MIDI.sendNoteOn(note, vel, 1);
+                        USE_MIDI(MIDI.sendNoteOn(note, vel, 1));
                     }
                 }
             }
@@ -113,7 +113,7 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
                 keyData->isPressed = false;
 
                 if (p->mode == MODE_KEYS || p->mode == MODE_MIDI) {
-                    MIDI.sendNoteOff(note, 0, 1);
+                    USE_MIDI(MIDI.sendNoteOff(note, 0, 1));
                 }
             }
         }
@@ -128,14 +128,14 @@ void detectKeys(player_t* p, bool retrigger, bool hold) {
     }
 }
 
-void midiNoteOn(byte channel, byte pitch, byte velocity) {
+void handleMidiNoteOn(byte channel, byte pitch, byte velocity) {
     player_t* p = get_instance();
     p->midiNotesPlayed++;
     digitalWrite(GATE, HIGH);
     synth_note_on(pitch, velocity);
 }
 
-void midiNoteOff(byte channel, byte pitch, byte velocity) {
+void handleMidiNoteOff(byte channel, byte pitch, byte velocity) {
     player_t* p = get_instance();
     p->midiNotesPlayed--;
     if (p->midiNotesPlayed <= 0) {
@@ -144,7 +144,7 @@ void midiNoteOff(byte channel, byte pitch, byte velocity) {
     }
 }
 
-void clockHandle() {
+void handleClock() {
     player_t* p = get_instance();
     p->arp.clockInCounter++;
 }
@@ -171,10 +171,10 @@ player_modes readModeSwitch() {
 }
 
 void player_init(player_t* player) {
-    MIDI.begin(MIDI_CHANNEL_OMNI);
-    MIDI.setHandleNoteOn(midiNoteOn);
-    MIDI.setHandleNoteOff(midiNoteOff);
-    MIDI.setHandleClock(clockHandle);
+    USE_MIDI(MIDI.begin(MIDI_CHANNEL_OMNI));
+    USE_MIDI(MIDI.setHandleNoteOn(handleMidiNoteOn));
+    USE_MIDI(MIDI.setHandleNoteOff(handleMidiNoteOff));
+    USE_MIDI(MIDI.setHandleClock(handleClock));
 
     memset(player, 0, sizeof(player_t));
 
@@ -269,7 +269,7 @@ void player_update(player_t* p) {
         if (p->lastMode >= MODE_ARP_UP) {
             // arp deselected
             int lastArpNote = NOTE_OF_LOWEST_KEY + p->arp.lastArpKey;
-            MIDI.sendNoteOff(lastArpNote, 0, 1);
+            USE_MIDI(MIDI.sendNoteOff(lastArpNote, 0, 1));
         }
         if (p->lastMode == MODE_MIDI) {
             // midi deselected
@@ -279,7 +279,7 @@ void player_update(player_t* p) {
             // normal play deselected
             for (int i = 0; i < NUM_KEYS; i++) {
                 if (p->keys[i].isPressed) {
-                    MIDI.sendNoteOff(NOTE_OF_LOWEST_KEY + i, 0, 1);
+                    USE_MIDI(MIDI.sendNoteOff(NOTE_OF_LOWEST_KEY + i, 0, 1));
                 }
             }
             digitalWrite(GATE, LOW);
@@ -308,7 +308,7 @@ void player_update(player_t* p) {
 
     else if (p->mode == MODE_MIDI) {
         // MIDI IN
-        MIDI.read();
+        USE_MIDI(MIDI.read());
 
         if (!digitalRead(HOLD)) {
             // panic switch
@@ -348,14 +348,14 @@ void player_update(player_t* p) {
         if (abs(p->lastPB - pbRead) > 1) {
             p->lastPB = pbRead;
             int value = (pbRead - 512) * 16;
-            MIDI.sendPitchBend(value, 1);
+            USE_MIDI(MIDI.sendPitchBend(value, 1));
         }
 
         // MODULATION
         int modRead = analogRead(MODULATION);
         if (abs(p->lastMod - modRead) > 1) {
             p->lastMod = modRead;
-            MIDI.sendControlChange(1, modRead / 8, 1);
+            USE_MIDI(MIDI.sendControlChange(1, modRead / 8, 1));
         }
     }
 

@@ -32,3 +32,11 @@
 
 // buffer size for keeping arp sequence
 #define MAX_ARP_KEYS 32
+
+// #define MIDI_ENABLED
+
+#ifdef MIDI_ENABLED
+#define USE_MIDI(x) x;
+#else
+#define USE_MIDI(x) ;
+#endif

@@ -10,17 +10,22 @@ void init_dac() {
     mcp.begin();
 }
 
-// note and vel have MIDI scale
-void synth_note_on(int note, int vel) {
-    // TODO translate note into good voltage range
+// note must be in range [NOTE_OF_LOWEST_KEY, NOTE_OF_LOWEST_KEY + 49] otherwise it will clip
+// vel has MIDI scale
+void synth_note_on(int note, int velocity) {
+    int pitch = (note - NOTE_OF_LOWEST_KEY) * 1000L / 12L;
+    if (pitch < 0) {
+        pitch = 0;
+    } else if (pitch >= 4096) {
+        pitch = 4095;
+    }
 
-    int pitch = int(note * 1000L / 12L);
-    int velocity = (127 - vel) * 32;
+    uint16_t vel_data = (127 - velocity) * 32;
 
     mcp.setChannelValue(MCP4728_CHANNEL_B, pitch,
                         MCP4728_VREF_INTERNAL, MCP4728_GAIN_2X);
 
-    mcp.setChannelValue(MCP4728_CHANNEL_A, velocity,
+    mcp.setChannelValue(MCP4728_CHANNEL_A, vel_data,
                         MCP4728_VREF_INTERNAL, MCP4728_GAIN_2X);
 
     digitalWrite(GATE, HIGH);
